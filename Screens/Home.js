@@ -1,11 +1,13 @@
-import React, { useState, useContext } from "react"
+import React, { useState, useContext, useEffect } from "react"
 import { StatusBar } from "expo-status-bar"
 import { ThemeContext } from "../theme/theme-context"
+import { Camera } from "expo-camera"
 import {
     StyleSheet,
     Text,
     View,
     Button,
+    TouchableOpacity,
     TextInput,
     ScrollView,
     SectionList,
@@ -15,6 +17,8 @@ import {
     Image,
     Switch,
     useColorScheme,
+    Vibration,
+    Alert,
 } from "react-native"
 
 function Home({ navigation }) {
@@ -29,6 +33,23 @@ function Home({ navigation }) {
     const toggleSwitch = () => setIsEnabled((previousState) => !previousState)
 
     const colorScheme = useColorScheme()
+
+    const [hasPermission, setHasPermission] = useState(null)
+    const [type, setType] = useState(Camera.Constants.Type.back)
+
+    useEffect(() => {
+        ;(async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync()
+            setHasPermission(status === "granted")
+        })()
+    }, [])
+
+    if (hasPermission === null) {
+        return <View />
+    }
+    if (hasPermission === false) {
+        return <Text>No access to camera</Text>
+    }
 
     const getMoviesFromApi = () => {
         return fetch("https://reactnative.dev/movies.json")
@@ -50,6 +71,41 @@ function Home({ navigation }) {
         })
         setMovieListFilter(result)
     }
+
+    const createThreeButtonAlert = () =>
+        Alert.alert("Alert Title", "My Alert Msg", [
+            {
+                text: "Ask me later",
+                onPress: () => console.log("Ask me later pressed"),
+            },
+            {
+                text: "Cancel",
+                onPress: () => console.log("Cancel Pressed"),
+                style: "cancel",
+            },
+            { text: "OK", onPress: () => console.log("OK Pressed") },
+        ])
+
+    const PendingView = () => (
+        <View
+            style={{
+                flex: 1,
+                backgroundColor: "lightgreen",
+                justifyContent: "center",
+                alignItems: "center",
+            }}
+        >
+            <Text>Waiting</Text>
+        </View>
+    )
+    const takePicture = async () => {
+        if (!camera) return
+        const photo = await camera.takePictureAsync()
+        console.log(photo)
+        setPreviewVisible(true)
+        setCapturedImage(photo)
+    }
+
     return (
         <ScrollView>
             <SafeAreaView
@@ -58,13 +114,64 @@ function Home({ navigation }) {
             >
                 {/* <Text>Open up App.js to start working on your app!</Text> */}
                 <StatusBar style="auto" />
-
+                <Button
+                    style={{
+                        padding: 10,
+                        fontSize: 14,
+                        fontWeight: "600",
+                    }}
+                    title="Question"
+                    onPress={() =>
+                        navigation.navigate("QuestionPage", {
+                            movie: "Question",
+                        })
+                    }
+                ></Button>
                 <Switch
                     trackColor={{ false: "#767577", true: "#ccc" }}
                     thumbColor={dark ? "#fff" : "#f4f3f4"}
                     onValueChange={toggle}
                     value={dark}
                 />
+                <Button
+                    title="Vibrate once"
+                    onPress={() => Vibration.vibrate()}
+                />
+                <Button
+                    title={"3-Button Alert"}
+                    onPress={createThreeButtonAlert}
+                />
+                {/* <Camera style={styles.camera} type={type}>
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={styles.button}
+                            onPress={() => {
+                                takePicture()
+                                setType(
+                                    type === Camera.Constants.Type.back
+                                        ? Camera.Constants.Type.front
+                                        : Camera.Constants.Type.back
+                                )
+                            }}
+                        >
+                            <Text style={styles.text}> Flip </Text>
+                            <Image
+                                // source={require("../assets/camera.png")}
+                                style={{ width: 100, height: 100 }}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => {
+                                takePicture()
+                            }}
+                        >
+                            <Image
+                                // source={require("./images/camera.jpeg")}
+                                style={{ width: 100, height: 100 }}
+                            />
+                        </TouchableOpacity>
+                    </View>
+                </Camera> */}
                 <Text
                     style={{
                         fontSize: 18,
@@ -84,7 +191,7 @@ function Home({ navigation }) {
                         borderWidth: 1,
                         borderColor: "lightgrey",
                         backgroundColor: "white",
-                        borderRadius: "10px",
+                        borderRadius: 10,
                     }}
                     placeholder="Search"
                     onChangeText={(newText) => {
@@ -102,9 +209,7 @@ function Home({ navigation }) {
                 <View
                     style={{
                         width: Dimensions.get("window").width - 40,
-
                         height: 60,
-
                         margin: 10,
                         marginBottom: 30,
                         marginTop: 20,
@@ -279,6 +384,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         // height: Dimensions.get("window").height,
+    },
+    text: {
+        height: "30%",
+        fontSize: 24,
     },
     sectionHeader: {
         paddingTop: 2,

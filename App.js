@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { View, Switch, StyleSheet } from "react-native"
 
 import SingleMoviePage from "./Screens/SingleMoviePage"
+import QuestionPage from "./Screens/QuestionPage"
 import Home from "./Screens/Home"
 import { ThemeProvider } from "./theme/theme-context"
 
@@ -40,6 +41,13 @@ export default function App() {
                     <Stack.Screen
                         name="SingleMoviePage"
                         component={SingleMoviePage}
+                        options={({ route }) => ({
+                            title: route.params.movie,
+                        })}
+                    />
+                    <Stack.Screen
+                        name="QuestionPage"
+                        component={QuestionPage}
                         options={({ route }) => ({
                             title: route.params.movie,
                         })}
